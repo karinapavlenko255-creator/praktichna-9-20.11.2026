@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Практична робота | Заміна іноземних термінів українськими словами</title>
+    <!-- Підключення Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Times New Roman"', 'Times', 'Georgia', 'serif'],
+                        sans: ['"Times New Roman"', 'Times', 'serif'],
+                        mono: ['"Times New Roman"', 'Times', 'monospace'],
+                    },
+                    colors: {
+                        academic: {
+                            50: '#f4f7f5',
+                            100: '#e3ebe6',
+                            200: '#c5d7cd',
+                            600: '#1b4332',
+                            700: '#143326',
+                            800: '#0d2219',
+                            900: '#081610',
+                        },
+                        gold: {
+                            100: '#fbf6e9',
+                            400: '#d4a338',
+                            500: '#b8860b',
+                            600: '#996f09',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Примусове застосування шрифту Times New Roman для всього документа */
+        * {
+            font-family: "Times New Roman", Times, Georgia, serif !important;
+        }
+        /* Заборона виділення тексту */
+        .no-select {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        /* Текстура шляхетного паперу для фону */
+        body {
+            background-color: #f3f1ec;
+            background-image: radial-gradient(#dcd7cc 0.75px, transparent 0.75px);
+            background-size: 18px 18px;
+        }
+        /* Плавна анімація появи */
+        .fade-in {
+            animation: fadeIn 0.35s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Ефект офіційного бланку */
+        .official-sheet {
+            box-shadow: 0 10px 25px -5px rgba(20, 51, 38, 0.08), 0 4px 10px -6px rgba(20, 51, 38, 0.05);
+            border: 1px solid #d5cfc2;
+        }
+    </style>
+</head>
+<body class="text-stone-900 antialiased no-select min-h-screen flex flex-col text-base sm:text-[17px]">
+
+    <!-- Плаваюче сповіщення (Заміна alert) -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 max-w-md w-full pointer-events-none px-4 sm:px-0"></div>
+
+    <!-- Модальне вікно попередження про порушення академічної доброчесності -->
+    <div id="anticheat-modal" class="fixed inset-0 bg-stone-950/85 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div class="bg-[#fdfcf9] rounded-xl max-w-md w-full p-6 shadow-2xl border-2 border-red-800 text-center fade-in">
+            <div class="w-16 h-16 bg-red-100 text-red-800 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-300">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+            </div>
+            <h3 class="text-xl font-bold text-red-950 uppercase tracking-wide mb-2">Порушення академічної доброчесності!</h3>
+            <p id="anticheat-reason" class="text-stone-700 text-base mb-4 leading-snug">
+                Ви покинули вкладку практичної роботи або згорнули вікно браузера. Цей факт зафіксовано у підсумковому протоколі для викладача.
+            </p>
+            <div class="bg-red-50 text-red-900 border border-red-200 text-sm font-bold py-2.5 px-3 rounded-lg mb-5">
+                Кількість зафіксованих виходів із вкладки: <span id="modal-violation-count" class="text-lg underline">1</span>
+            </div>
+            <button onclick="closeAnticheatModal()" class="w-full py-3 px-4 bg-red-800 hover:bg-red-900 text-white font-bold rounded-lg transition shadow-md cursor-pointer">
+                Повернутися до виконання роботи
+            </button>
+        </div>
+    </div>
+
+    <!-- Верхня академічна шапка -->
+    <header class="bg-academic-700 text-white border-b-4 border-gold-500 sticky top-0 z-30 shadow-md">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3.5">
+                <div class="w-11 h-11 bg-gold-500 text-academic-900 rounded-lg flex items-center justify-center font-bold text-lg shadow-inner border border-gold-400 shrink-0">
+                    СПМ
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-lg font-bold tracking-wide text-white leading-tight">
+                        Стилістика професійного мовлення
+                    </h1>
+                    <p class="text-xs sm:text-sm text-academic-200">
+                        Професія: «Секретар керівника» • Курс: ІІІ • Інтерактивний практикум
+                    </p>
+                </div>
+            </div>
+
+            <!-- Панель моніторингу під час виконання роботи -->
+            <div id="session-status" class="hidden items-center gap-3 sm:gap-4">
+                <div class="hidden md:flex items-center gap-2 text-xs sm:text-sm bg-academic-800 text-gold-400 px-3 py-1.5 rounded-lg border border-academic-600">
+                    <span class="w-2.5 h-2.5 rounded-full bg-gold-400 animate-pulse"></span>
+                    <span>Античит-контроль активний</span>
+                </div>
+                <div class="flex items-center gap-1.5 text-sm sm:text-base font-bold bg-academic-800 text-white px-3 py-1.5 rounded-lg border border-academic-600">
+                    <svg class="w-4 h-4 text-gold-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span id="timer-display">00:00</span>
+                </div>
+                <div id="violation-badge" class="text-xs sm:text-sm font-bold px-3 py-1.5 rounded-lg bg-emerald-900/80 text-emerald-200 border border-emerald-600">
+                    Порушень: <span id="header-violation-count">0</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Основний робочий простір -->
+    <main class="flex-grow max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- ЕКРАН 1: Титульний лист практичної роботи (Вимоги МОН) та реєстрація студента -->
+        <section id="screen-intro" class="fade-in space-y-6">
+            
+            <!-- Офіційна картка практичної роботи -->
+            <div class="bg-[#fdfcf9] official-sheet rounded-xl overflow-hidden">
+                <div class="bg-academic-600 px-6 sm:px-8 py-6 text-white border-b-2 border-gold-500">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                        <span class="px-3 py-1 bg-gold-500 text-academic-900 rounded text-xs sm:text-sm font-bold uppercase tracking-wider">
+                            Практична робота
+                        </span>
+                        <span class="text-xs sm:text-sm text-academic-200 italic">
+                            Відповідно до вимог МОН України та ДСТУ 4163:2020
+                        </span>
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl font-bold leading-snug mt-2">
+                        Тема: Заміна іноземних термінів українськими словами
+                    </h2>
+                </div>
+
+                <div class="p-6 sm:p-8 space-y-6">
+                    <!-- Мета та завдання роботи -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="bg-academic-50 p-5 rounded-xl border border-academic-200">
+                            <h3 class="font-bold text-academic-800 text-lg mb-2 flex items-center gap-2 border-b border-academic-200 pb-1.5">
+                                <svg class="w-5 h-5 text-academic-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                Мета практичної роботи:
+                            </h3>
+                            <p class="text-stone-800 text-base leading-relaxed">
+                                Сформувати у студентів ІІІ курсу стійкі практичні навички стилістичного редагування службової документації; навчити виявляти невиправдані іншомовні запозичення в офіційно-діловому мовленні та самостійно замінювати їх нормативними українськими словами відповідно до чинного правопису і ДСТУ 4163:2020.
+                            </p>
+                        </div>
+
+                        <div class="bg-academic-50 p-5 rounded-xl border border-academic-200">
+                            <h3 class="font-bold text-academic-800 text-lg mb-2 flex items-center gap-2 border-b border-academic-200 pb-1.5">
+                                <svg class="w-5 h-5 text-academic-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                                Професійні компетентності:
+                            </h3>
+                            <p class="text-stone-800 text-base leading-relaxed">
+                                Після виконання роботи студент уміє: розмежовувати виправдані терміни та стилістично надмірні запозичення; усувати лексичні плеоназми; грамотно редагувати проєкти наказів і ділових листів на рівні професійних вимог секретаря керівника.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Регламент академічної доброчесності -->
+                    <div class="bg-gold-100 border-l-4 border-gold-500 rounded-r-xl p-5">
+                        <h4 class="font-bold text-stone-900 text-lg mb-2 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-gold-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                            Правила виконання роботи та контроль академічної доброчесності:
+                        </h4>
+                        <ul class="text-base text-stone-800 space-y-1.5 list-disc list-inside leading-snug">
+                            <li><strong>Повна самостійність (без підказок):</strong> Завдання розроблені для студентів ІІІ курсу. Автоматичні підказки та автозаповнення вимкнено.</li>
+                            <li><strong>Блокування буфера обміну:</strong> Копіювання тексту умов, вирізання та вставка відповідей (Ctrl+C, Ctrl+V, контекстне меню) технічно заблоковані.</li>
+                            <li><strong>Контроль вкладки:</strong> Перехід на інші вкладки браузера, відкриття онлайн-словників чи згортання вікна автоматично фіксується системою і заноситься в електронний звіт.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Бланк реєстрації студента -->
+            <div class="bg-[#fdfcf9] official-sheet rounded-xl p-6 sm:p-8">
+                <h3 class="text-xl font-bold text-academic-800 border-b border-stone-300 pb-3 mb-5">
+                    Реєстраційна картка студента
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
+                    <div>
+                        <label for="student-name" class="block text-base font-bold text-stone-800 mb-1.5">
+                            Прізвище, ім’я, по батькові студента: <span class="text-red-700">*</span>
+                        </label>
+                        <input type="text" id="student-name" placeholder="Введіть повне ПІБ..." autocomplete="off"
+                            class="w-full px-4 py-2.5 rounded-lg border border-stone-400 bg-white text-stone-900 text-base focus:ring-2 focus:ring-academic-600 focus:border-academic-600 outline-none transition">
+                    </div>
+                    <div>
+                        <label for="student-group" class="block text-base font-bold text-stone-800 mb-1.5">
+                            Навчальна група (ІІІ курс): <span class="text-red-700">*</span>
+                        </label>
+                        <input type="text" id="student-group" placeholder="Наприклад: СК-31" autocomplete="off"
+                            class="w-full px-4 py-2.5 rounded-lg border border-stone-400 bg-white text-stone-900 text-base focus:ring-2 focus:ring-academic-600 focus:border-academic-600 outline-none transition">
+                    </div>
+                </div>
+                <button onclick="startWork()" class="w-full sm:w-auto px-8 py-3.5 bg-academic-700 hover:bg-academic-800 text-white font-bold text-lg rounded-lg shadow-md hover:shadow-lg transition flex items-center justify-center gap-2.5 cursor-pointer border border-academic-900">
+                    <span>Розпочати практичну роботу</span>
+                    <svg class="w-5 h-5 text-gold-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </button>
+            </div>
+        </section>
+
+        <!-- ЕКРАН 2: Теоретичний блок та 5 різнорівневих практичних завдань -->
+        <section id="screen-work" class="hidden fade-in space-y-6">
+            
+            <!-- Інтерактивна навігація та індикатор прогресу заповнення -->
+            <div class="bg-[#fdfcf9] official-sheet p-4 rounded-xl space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-2 text-sm">
+                    <span class="font-bold text-academic-800">Прогрес заповнення практичної частини:</span>
+                    <span id="progress-text" class="font-bold text-academic-700">Заповнено 0 з 24 полів (0%)</span>
+                </div>
+                <div class="w-full bg-stone-200 rounded-full h-2.5 overflow-hidden border border-stone-300">
+                    <div id="progress-bar" class="bg-academic-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+
+                <!-- Вкладки розділів -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 pt-2" id="nav-tabs">
+                    <button onclick="switchTab('theory')" id="tab-btn-theory" class="tab-btn py-2.5 px-3 rounded-lg text-sm sm:text-base font-bold bg-academic-700 text-white border border-academic-800 transition cursor-pointer">
+                        Теоретичний блок
+                    </button>
+                    <button onclick="switchTab('task1')" id="tab-btn-task1" class="tab-btn py-2.5 px-3 rounded-lg text-sm sm:text-base font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 border border-stone-300 transition cursor-pointer">
+                        Завдання 1
+                    </button>
+                    <button onclick="switchTab('task2')" id="tab-btn-task2" class="tab-btn py-2.5 px-3 rounded-lg text-sm sm:text-base font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 border border-stone-300 transition cursor-pointer">
+                        Завдання 2
+                    </button>
+                    <button onclick="switchTab('task3')" id="tab-btn-task3" class="tab-btn py-2.5 px-3 rounded-lg text-sm sm:text-base font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 border border-stone-300 transition cursor-pointer">
+                        Завдання 3
+                    </button>
+                    <button onclick="switchTab('task4')" id="tab-btn-task4" class="tab-btn py-2.5 px-3 rounded-lg text-sm sm:text-base font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 border border-stone-300 transition cursor-pointer">
+                        Завдання 4
+                    </button>
+                    <button onclick="switchTab('task5')" id="tab-btn-task5" class="tab-btn py-2.5 px-3 rounded-lg text-sm sm:text-base font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 border border-stone-300 transition cursor-pointer">
+                        Завдання 5
+                    </button>
+                </div>
+            </div>
+
+            <!-- БЛОК: ТЕОРЕТИЧНІ ВІДОМОСТІ -->
+            <div id="content-theory" class="tab-content bg-[#fdfcf9] official-sheet rounded-xl p-6 sm:p-8 space-y-5">
+                <div class="border-b-2 border-academic-600 pb-3">
+                    <span class="text-xs font-bold uppercase tracking-widest text-gold-600">Розділ І • Методичне обґрунтування</span>
+                    <h2 class="text-2xl font-bold text-academic-900 mt-1">Теоретичний блок: Заміна іноземних термінів українськими словами</h2>
+                </div>
+
+                <div class="space-y-4 text-base sm:text-[17px] text-stone-800 leading-relaxed text-justify">
+                    <p>
+                        Офіційно-діловий стиль української мови характеризується високою стандартизацією, точністю формулювань, стислістю та загальнозрозумілістю. У професійній діяльності секретаря керівника важливо дотримуватися чистоти мовлення та уникати надмірного захоплення іноземними словами (переважно новітніми англіцизмами та варваризмами), коли в українській мові існують точні, стилістично нейтральні відповідники.
+                    </p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 my-4 text-left">
+                        <div class="bg-academic-50 border border-academic-200 rounded-xl p-5">
+                            <h4 class="font-bold text-academic-900 text-lg mb-2 border-b border-academic-200 pb-1">
+                                1. Коли іншомовний термін виправданий:
+                            </h4>
+                            <ul class="text-base text-stone-800 space-y-2 list-disc list-inside">
+                                <li>Термін позначає нове явище, технічний засіб чи поняття, що не має питомого українського найменування (наприклад: <em>принтер, сканер, браузер, факс</em>).</li>
+                                <li>Слово є усталеним міжнародним юридичним, економічним чи управлінським терміном, який забезпечує точність документації (наприклад: <em>аудит, інвестиція, лізинг, форс-мажор</em>).</li>
+                                <li>Іншомовний термін дає змогу уникнути громіздкої описової конструкції.</li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-red-50/60 border border-red-200 rounded-xl p-5">
+                            <h4 class="font-bold text-red-950 text-lg mb-2 border-b border-red-200 pb-1">
+                                2. Коли запозичення є стилістичною помилкою:
+                            </h4>
+                            <ul class="text-base text-stone-800 space-y-2 list-disc list-inside">
+                                <li>У мові існує точний український синонім (наприклад: <em>дедлайн — кінцевий строк / термін; івент — захід; апдейт — оновлення</em>).</li>
+                                <li>Виникає <strong>плеоназм</strong> — смислове дублювання, коли поруч стоять іншомовне й українське слова з однаковим значенням (наприклад: <em>вільна вакансія, прейскурант цін, хронометраж часу</em>).</li>
+                                <li>Уживання офісного жаргону в розпорядчих документах (наприклад: <em>кейс, мітинг, фідбек, колл</em>).</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <p>
+                        <strong>Нормативна база:</strong> Згідно з вимогами <strong>ДСТУ 4163:2020</strong> («Уніфікована система організаційно-розпорядчої документації. Вимоги до оформлення документів»), текст управлінського документа має бути викладений грамотною українською літературною мовою. Обов’язок секретаря керівника під час підготовки наказів, протоколів, довідок та службових листів — редагувати чернетки й замінювати невиправдані запозичення питомими українськими словами.
+                    </p>
+                </div>
+
+                <div class="pt-4 border-t border-stone-200 flex justify-end">
+                    <button onclick="switchTab('task1')" class="px-6 py-3 bg-academic-700 hover:bg-academic-800 text-white font-bold rounded-lg transition flex items-center gap-2 shadow-sm cursor-pointer">
+                        <span>Перейти до практичної частини (Завдання 1)</span>
+                        <svg class="w-4 h-4 text-gold-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ЗАВДАННЯ 1: Базовий лексичний рівень -->
+            <div id="content-task1" class="tab-content hidden bg-[#fdfcf9] official-sheet rounded-xl p-6 sm:p-8 space-y-5">
+                <div class="border-b-2 border-academic-600 pb-3 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <span class="px-2.5 py-0.5 bg-academic-100 text-academic-800 border border-academic-300 text-xs font-bold rounded uppercase">Рівень І • Початково-базовий (2 бали)</span>
+                        <h2 class="text-2xl font-bold text-academic-900 mt-1.5">Завдання 1. Добір українських відповідників до іноземних слів</h2>
+                    </div>
+                </div>
+                <p class="text-base text-stone-700 leading-relaxed">
+                    <strong>Інструкція:</strong> Самостійно впишіть нормативний український відповідник (у початковій формі — називний відмінок однини) до кожного наведеного іноземного слова, яке часто вживається в діловому мовленні. Пишіть без розділових знаків.
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="task1-container">
+                    <!-- Генерується JS -->
+                </div>
+
+                <div class="pt-4 border-t border-stone-200 flex justify-between">
+                    <button onclick="switchTab('theory')" class="px-5 py-2.5 bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold rounded-lg transition cursor-pointer">← Теоретичний блок</button>
+                    <button onclick="switchTab('task2')" class="px-6 py-2.5 bg-academic-700 hover:bg-academic-800 text-white font-bold rounded-lg transition cursor-pointer">Завдання 2 →</button>
+                </div>
+            </div>
+
+            <!-- ЗАВДАННЯ 2: Редагування плеоназмів -->
+            <div id="content-task2" class="tab-content hidden bg-[#fdfcf9] official-sheet rounded-xl p-6 sm:p-8 space-y-5">
+                <div class="border-b-2 border-academic-600 pb-3">
+                    <span class="px-2.5 py-0.5 bg-academic-100 text-academic-800 border border-academic-300 text-xs font-bold rounded uppercase">Рівень ІІ • Середній (2 бали)</span>
+                    <h2 class="text-2xl font-bold text-academic-900 mt-1.5">Завдання 2. Усунення лексичної надмірності (плеоназмів)</h2>
+                </div>
+                <p class="text-base text-stone-700 leading-relaxed">
+                    <strong>Інструкція:</strong> У наведених словосполученнях іноземне слово дублює зміст українського (виникає плеоназм). Відредагуйте кожну конструкцію, залишивши нормативний український варіант у називному відмінку.
+                </p>
+
+                <div class="space-y-3" id="task2-container">
+                    <!-- Генерується JS -->
+                </div>
+
+                <div class="pt-4 border-t border-stone-200 flex justify-between">
+                    <button onclick="switchTab('task1')" class="px-5 py-2.5 bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold rounded-lg transition cursor-pointer">← Завдання 1</button>
+                    <button onclick="switchTab('task3')" class="px-6 py-2.5 bg-academic-700 hover:bg-academic-800 text-white font-bold rounded-lg transition cursor-pointer">Завдання 3 →</button>
+                </div>
+            </div>
+
+            <!-- ЗАВДАННЯ 3: Стилістичне редагування ділових речень -->
+            <div id="content-task3" class="tab-content hidden bg-[#fdfcf9] official-sheet rounded-xl p-6 sm:p-8 space-y-5">
+                <div class="border-b-2 border-academic-600 pb-3">
+                    <span class="px-2.5 py-0.5 bg-academic-100 text-academic-800 border border-academic-300 text-xs font-bold rounded uppercase">Рівень ІІІ • Достатній (2.5 бали)</span>
+                    <h2 class="text-2xl font-bold text-academic-900 mt-1.5">Завдання 3. Контекстуальна заміна в реченнях службових листів</h2>
+                </div>
+                <p class="text-base text-stone-700 leading-relaxed">
+                    <strong>Інструкція:</strong> Перепишіть кожне речення повністю, замінивши виділені підкресленням іноземні слова точними українськими відповідниками та узгодивши їх граматично за нормами офіційно-ділового стилю.
+                </p>
+
+                <div class="space-y-5" id="task3-container">
+                    <!-- Генерується JS -->
+                </div>
+
+                <div class="pt-4 border-t border-stone-200 flex justify-between">
+                    <button onclick="switchTab('task2')" class="px-5 py-2.5 bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold rounded-lg transition cursor-pointer">← Завдання 2</button>
+                    <button onclick="switchTab('task4')" class="px-6 py-2.5 bg-academic-700 hover:bg-academic-800 text-white font-bold rounded-lg transition cursor-pointer">Завдання 4 →</button>
+                </div>
+            </div>
+
+            <!-- ЗАВДАННЯ 4: Аналіз доцільності вживання термінів -->
+            <div id="content-task4" class="tab-content hidden bg-[#fdfcf9] official-sheet rounded-xl p-6 sm:p-8 space-y-5">
+                <div class="border-b-2 border-academic-600 pb-3">
+                    <span class="px-2.5 py-0.5 bg-academic-100 text-academic-800 border border-academic-300 text-xs font-bold rounded uppercase">Рівень IV • Високий (2.5 бали)</span>
+                    <h2 class="text-2xl font-bold text-academic-900 mt-1.5">Завдання 4. Оцінка доцільності використання терміна в документі</h2>
+                </div>
+                <p class="text-base text-stone-700 leading-relaxed">
+                    <strong>Інструкція:</strong> Проаналізуйте наведені слова в контексті діловодства. Якщо слово є виправданим міжнародним терміном без однослівного українського замінника — оберіть <strong>«Залишити (виправданий термін)»</strong>. Якщо слово має точний український відповідник — оберіть <strong>«Замінити українським словом»</strong> і впишіть його.
+                </p>
+
+                <div class="space-y-4" id="task4-container">
+                    <!-- Генерується JS -->
+                </div>
+
+                <div class="pt-4 border-t border-stone-200 flex justify-between">
+                    <button onclick="switchTab('task3')" class="px-5 py-2.5 bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold rounded-lg transition cursor-pointer">← Завдання 3</button>
+                    <button onclick="switchTab('task5')" class="px-6 py-2.5 bg-academic-700 hover:bg-academic-800 text-white font-bold rounded-lg transition cursor-pointer">Завдання 5 →</button>
+                </div>
+            </div>
+
+            <!-- ЗАВДАННЯ 5: Комплексне редагування проєкту наказу -->
+            <div id="content-task5" class="tab-content hidden bg-[#fdfcf9] official-sheet rounded-xl p-6 sm:p-8 space-y-5">
+                <div class="border-b-2 border-academic-600 pb-3">
+                    <span class="px-2.5 py-0.5 bg-gold-100 text-stone-900 border border-gold-400 text-xs font-bold rounded uppercase">Рівень V • Творчо-професійний (3 бали)</span>
+                    <h2 class="text-2xl font-bold text-academic-900 mt-1.5">Завдання 5. Стилістичне редагування проєкту наказу керівника</h2>
+                </div>
+                <p class="text-base text-stone-700 leading-relaxed">
+                    <strong>Інструкція:</strong> Як секретар керівника відредагуйте наведений нижче проєкт розпорядчої частини наказу. У тексті використано <strong>8 невиправданих іноземних слів</strong>. Перепишіть текст повністю у поле нижче, замінивши всі надмірні запозичення нормативними українськими словами.
+                </p>
+
+                <div class="bg-stone-100 border-l-4 border-academic-700 p-5 rounded-r-xl text-base text-stone-900 leading-relaxed">
+                    <p class="font-bold uppercase text-sm text-academic-800 mb-2">Чернетка тексту наказу (для редагування):</p>
+                    <p>
+                        «З метою оптимізації робочих процесів та підготовки до щорічного бізнес-саміту партнерів НАКАЗУЮ: 1. Керівникам департаментів провести моніторинг актуальних кейсів за поточний квартал та надати фідбек у вигляді аналітичного дайджесту. 2. Секретарю керівника організувати онлайн-мітинг із регіональними представниками та сформувати таймінг виступів. 3. Встановити дедлайн подання звітної документації — 25 листопада поточного року. 4. Контроль за виконанням наказу залишаю за собою.»
+                    </p>
+                </div>
+
+                <div>
+                    <label for="task5-input" class="block text-base font-bold text-stone-900 mb-2">
+                        Відредагований текст наказу (вводиться власноруч):
+                    </label>
+                    <textarea id="task5-input" rows="7" placeholder="Введіть відредагований варіант тексту наказу..."
+                        class="w-full p-4 rounded-lg border border-stone-400 bg-white focus:ring-2 focus:ring-academic-600 focus:border-academic-600 outline-none transition text-base text-stone-900 leading-relaxed"></textarea>
+                    <div class="flex flex-wrap justify-between items-center mt-2 text-sm text-stone-600">
+                        <span>Буфер обміну заблоковано. Перевіряється самостійність введення.</span>
+                        <span id="task5-wordcount" class="font-bold">Кількість слів: 0</span>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-stone-200 flex flex-wrap justify-between gap-3">
+                    <button onclick="switchTab('task4')" class="px-5 py-2.5 bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold rounded-lg transition cursor-pointer">← Завдання 4</button>
+                    <button onclick="finishWork()" class="px-8 py-3 bg-academic-700 hover:bg-academic-800 text-white font-bold text-lg rounded-lg shadow-md hover:shadow-lg transition flex items-center gap-2 cursor-pointer border border-academic-900">
+                        <svg class="w-5 h-5 text-gold-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        <span>Завершити практичну роботу та сформувати протокол</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ЕКРАН 3: Підсумковий протокол практичної роботи -->
+        <section id="screen-results" class="hidden fade-in space-y-6">
+            <div class="bg-[#fdfcf9] official-sheet rounded-xl overflow-hidden">
+                <div class="bg-academic-800 text-white p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b-4 border-gold-500">
+                    <div>
+                        <span class="px-3 py-1 bg-gold-500 text-academic-900 rounded text-xs font-bold uppercase tracking-wider">
+                            Протокол виконання
+                        </span>
+                        <h2 class="text-2xl sm:text-3xl font-bold mt-2">Практична робота: Заміна іноземних термінів українськими словами</h2>
+                        <p class="text-academic-200 text-sm sm:text-base mt-1">Предмет: Стилістика професійного мовлення • Професія: «Секретар керівника» (ІІІ курс)</p>
+                    </div>
+                    <div class="bg-academic-900/90 rounded-xl p-4 text-center min-w-[150px] border border-gold-500/50">
+                        <div class="text-xs text-gold-400 uppercase font-bold">Результат оцінювання</div>
+                        <div class="text-3xl sm:text-4xl font-bold text-white mt-1"><span id="final-score">0</span><span class="text-lg text-academic-200"> / 12</span></div>
+                    </div>
+                </div>
+
+                <div class="p-6 sm:p-8 space-y-6">
+                    <!-- Відомості про студента та дотримання доброчесності -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="bg-academic-50 p-4 rounded-xl border border-academic-200">
+                            <div class="text-xs text-stone-600 uppercase font-bold">Студент (ПІБ)</div>
+                            <div id="res-name" class="font-bold text-stone-900 mt-1 text-base">—</div>
+                        </div>
+                        <div class="bg-academic-50 p-4 rounded-xl border border-academic-200">
+                            <div class="text-xs text-stone-600 uppercase font-bold">Навчальна група</div>
+                            <div id="res-group" class="font-bold text-stone-900 mt-1 text-base">—</div>
+                        </div>
+                        <div class="bg-academic-50 p-4 rounded-xl border border-academic-200">
+                            <div class="text-xs text-stone-600 uppercase font-bold">Час виконання</div>
+                            <div id="res-time" class="font-bold text-stone-900 mt-1 text-base">—</div>
+                        </div>
+                        <div id="res-integrity-box" class="bg-emerald-50 p-4 rounded-xl border border-emerald-300">
+                            <div class="text-xs uppercase font-bold text-emerald-800">Академічна доброчесність</div>
+                            <div id="res-violations" class="font-bold text-emerald-950 mt-1 text-base">Порушень не зафіксовано</div>
+                        </div>
+                    </div>
+
+                    <!-- Деталізація перевірки всіх 5 завдань -->
+                    <div>
+                        <h3 class="text-xl font-bold text-academic-900 border-b border-stone-300 pb-2 mb-4">
+                            Детальний аналіз виконання практичних завдань
+                        </h3>
+                        <div id="results-breakdown" class="space-y-4">
+                            <!-- Генерується JS -->
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-stone-300 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <p class="text-sm text-stone-600">
+                            Збережіть цей протокол у формат PDF або зробіть знімок екрана для перевірки викладачем.
+                        </p>
+                        <button onclick="window.print()" class="w-full sm:w-auto px-6 py-2.5 bg-academic-700 hover:bg-academic-800 text-white font-bold rounded-lg transition flex items-center justify-center gap-2 cursor-pointer">
+                            <svg class="w-4 h-4 text-gold-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                            <span>Друкувати / Зберегти PDF</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-academic-800 text-academic-200 border-t-2 border-gold-500 py-4 text-center text-sm">
+        Практична робота з предмета «Стилістика професійного мовлення» • Відповідає вимогам МОН України та ДСТУ 4163:2020
+    </footer>
+
+    <!-- СКРИПТ РОБОТИ ТРЕНАЖЕРА ТА СИСТЕМИ АНТИЧИТУ -->
+    <script>
+        const state = {
+            started: false,
+            finished: false,
+            studentName: '',
+            studentGroup: '',
+            timerInterval: null,
+            elapsedSeconds: 0,
+            violations: 0,
+            pasteAttempts: 0
+        };
+
+        // БАЗА ЗАВДАНЬ ДЛЯ СТУДЕНТІВ ІІІ КУРСУ (Без підказок)
+        const task1Data = [
+            { id: 't1_1', foreign: 'Дедлайн', valid: ['кінцевий термін', 'кінцевий строк', 'реченець', 'строк', 'термін'] },
+            { id: 't1_2', foreign: 'Фідбек', valid: ['відгук', 'зворотний звязок', 'зворотній звязок', 'відповідь', 'реакція'] },
+            { id: 't1_3', foreign: 'Апдейт', valid: ['оновлення', 'уточнення', 'нові дані'] },
+            { id: 't1_4', foreign: 'Консенсус', valid: ['згода', 'порозуміння', 'одностайність', 'спільна думка'] },
+            { id: 't1_5', foreign: 'Координація', valid: ['узгодження', 'погодження', 'взаємодія'] },
+            { id: 't1_6', foreign: 'Інцидент', valid: ['випадок', 'пригода', 'подія', 'непорозуміння'] },
+            { id: 't1_7', foreign: 'Пролонгація', valid: ['продовження', 'подовження'] },
+            { id: 't1_8', foreign: 'Превентивний', valid: ['запобіжний', 'попереджувальний'] }
+        ];
+
+        const task2Data = [
+            { id: 't2_1', wrong: 'Вільна вакансія', valid: ['вакансія', 'вільне місце', 'вільна посада'] },
+            { id: 't2_2', wrong: 'Прейскурант цін', valid: ['прейскурант', 'цінник', 'перелік цін'] },
+            { id: 't2_3', wrong: 'Хронометраж часу', valid: ['хронометраж', 'облік часу', 'вимірювання часу'] },
+            { id: 't2_4', wrong: 'Головний лейтмотив', valid: ['лейтмотив', 'основна думка', 'головна думка'] },
+            { id: 't2_5', wrong: 'Пам’ятний сувенір', valid: ['сувенір', 'подарунок на згадку', 'памятка'] },
+            { id: 't2_6', wrong: 'Інформаційний дайджест', valid: ['дайджест', 'огляд інформації', 'стислий огляд'] }
+        ];
+
+        const task3Data = [
+            {
+                id: 't3_1',
+                original: 'Просимо надіслати фінальний <u>інвойс</u> та <u>верифікувати</u> реквізити компанії до кінця дня.',
+                keywords: ['рахунок', 'перевірити', 'підтвердити'],
+                sample: 'Просимо надіслати остаточний рахунок та перевірити (підтвердити) реквізити підприємства до кінця дня.'
+            },
+            {
+                id: 't3_2',
+                original: 'На завтра заплановано <u>брифінг</u> із керівництвом для обговорення <u>пріоритетних</u> задач.',
+                keywords: ['нарада', 'нараду', 'першочергових', 'головних'],
+                sample: 'На завтра заплановано коротку нараду з керівництвом для обговорення першочергових завдань.'
+            },
+            {
+                id: 't3_3',
+                original: 'Секретар має <u>асистувати</u> директору під час <u>презентації</u> нового проєкту.',
+                keywords: ['допомагати', 'представлення', 'показу'],
+                sample: 'Секретар має допомагати директорові під час представлення нового проєкту.'
+            },
+            {
+                id: 't3_4',
+                original: 'Ми <u>ініціюємо</u> <u>модернізацію</u> системи електронного документообігу.',
+                keywords: ['започатковуємо', 'ініціюємо', 'оновлення', 'удосконалення'],
+                sample: 'Ми започатковуємо оновлення (удосконалення) системи електронного документообігу.'
+            }
+        ];
+
+        const task4Data = [
+            { id: 't4_1', word: 'Форс-мажор (у договорі)', action: 'keep', valid: [] },
+            { id: 't4_2', word: 'Мітинг (у значенні «ділова зустріч»)', action: 'replace', valid: ['нарада', 'зустріч', 'збори', 'засідання'] },
+            { id: 't4_3', word: 'Аудит (фінансова перевірка)', action: 'keep', valid: [] },
+            { id: 't4_4', word: 'Кейс (у значенні «випадок, ситуація»)', action: 'replace', valid: ['випадок', 'ситуація', 'приклад', 'справа'] },
+            { id: 't4_5', word: 'Таймінг (у програмі заходу)', action: 'replace', valid: ['розклад', 'регламент', 'розрахунок часу', 'графік'] }
+        ];
+
+        // Генерація полів завдань
+        function renderTasks() {
+            document.getElementById('task1-container').innerHTML = task1Data.map((item, idx) => `
+                <div class="bg-academic-50 p-4 rounded-lg border border-stone-300 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <label for="${item.id}" class="font-bold text-stone-900 text-base">${idx + 1}. ${item.foreign}</label>
+                    <input type="text" id="${item.id}" oninput="updateProgress()" autocomplete="off" spellcheck="false" placeholder="Впишіть слово..."
+                        class="track-input w-full sm:w-56 px-3 py-2 rounded border border-stone-400 bg-white text-base focus:ring-2 focus:ring-academic-600 outline-none">
+                </div>
+            `).join('');
+
+            document.getElementById('task2-container').innerHTML = task2Data.map((item, idx) => `
+                <div class="bg-academic-50 p-4 rounded-lg border border-stone-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="text-base">
+                        <span class="font-bold text-academic-800 mr-1">${idx + 1}.</span>
+                        <span class="line-through text-red-800 font-bold">${item.wrong}</span>
+                    </div>
+                    <input type="text" id="${item.id}" oninput="updateProgress()" autocomplete="off" spellcheck="false" placeholder="Правильний варіант..."
+                        class="track-input w-full sm:w-72 px-3 py-2 rounded border border-stone-400 bg-white text-base focus:ring-2 focus:ring-academic-600 outline-none">
+                </div>
+            `).join('');
+
+            document.getElementById('task3-container').innerHTML = task3Data.map((item, idx) => `
+                <div class="bg-academic-50 p-4 rounded-lg border border-stone-300 space-y-2.5">
+                    <p class="text-base text-stone-900">
+                        <span class="font-bold text-academic-800">${idx + 1}.</span> ${item.original}
+                    </p>
+                    <input type="text" id="${item.id}" oninput="updateProgress()" autocomplete="off" spellcheck="false" placeholder="Запишіть відредаговане речення повністю..."
+                        class="track-input w-full px-3.5 py-2.5 rounded border border-stone-400 bg-white text-base focus:ring-2 focus:ring-academic-600 outline-none">
+                </div>
+            `).join('');
+
+            document.getElementById('task4-container').innerHTML = task4Data.map((item, idx) => `
+                <div class="bg-academic-50 p-4 rounded-lg border border-stone-300 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                    <div class="font-bold text-stone-900 text-base">${idx + 1}. ${item.word}</div>
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        <select id="${item.id}_select" onchange="toggleTask4Input('${item.id}'); updateProgress();"
+                            class="track-select px-3 py-2 rounded border border-stone-400 bg-white text-base font-bold focus:ring-2 focus:ring-academic-600 outline-none cursor-pointer">
+                            <option value="">-- Оберіть рішення --</option>
+                            <option value="keep">Залишити (виправданий термін)</option>
+                            <option value="replace">Замінити українським словом</option>
+                        </select>
+                        <input type="text" id="${item.id}_input" oninput="updateProgress()" disabled autocomplete="off" spellcheck="false" placeholder="Український відповідник..."
+                            class="px-3 py-2 rounded border border-stone-400 bg-stone-200 text-base disabled:opacity-50 focus:ring-2 focus:ring-academic-600 outline-none sm:w-52">
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleTask4Input(id) {
+            const select = document.getElementById(`${id}_select`);
+            const input = document.getElementById(`${id}_input`);
+            if (select.value === 'replace') {
+                input.disabled = false;
+                input.classList.remove('bg-stone-200');
+                input.classList.add('bg-white');
+                input.focus();
+            } else {
+                input.disabled = true;
+                input.value = '';
+                input.classList.add('bg-stone-200');
+                input.classList.remove('bg-white');
+            }
+        }
+
+        // Оновлення індикатора прогресу
+        function updateProgress() {
+            let filled = 0;
+            const total = 24; // 8 (Т1) + 6 (Т2) + 4 (Т3) + 5 (Т4) + 1 (Т5)
+
+            task1Data.forEach(i => { if (document.getElementById(i.id).value.trim().length > 1) filled++; });
+            task2Data.forEach(i => { if (document.getElementById(i.id).value.trim().length > 1) filled++; });
+            task3Data.forEach(i => { if (document.getElementById(i.id).value.trim().length > 10) filled++; });
+            task4Data.forEach(i => {
+                const sel = document.getElementById(`${i.id}_select`).value;
+                const inp = document.getElementById(`${i.id}_input`).value.trim();
+                if (sel === 'keep' || (sel === 'replace' && inp.length > 1)) filled++;
+            });
+            if (document.getElementById('task5-input').value.trim().length > 40) filled++;
+
+            const pct = Math.round((filled / total) * 100);
+            document.getElementById('progress-bar').style.width = `${pct}%`;
+            document.getElementById('progress-text').textContent = `Заповнено ${filled} з ${total} завдань (${pct}%)`;
+        }
+
+        // Сповіщення
+        function showToast(message, type = 'warning') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgClass = type === 'error' ? 'bg-red-900 text-white border border-red-600' : (type === 'success' ? 'bg-academic-800 text-white border border-gold-500' : 'bg-stone-900 text-white border border-stone-600');
+            
+            toast.className = `${bgClass} px-4 py-3 rounded-lg shadow-xl text-sm sm:text-base font-bold flex items-center gap-2.5 pointer-events-auto fade-in`;
+            toast.innerHTML = `
+                <svg class="w-5 h-5 shrink-0 text-gold-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span>${message}</span>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // Початок практичної роботи
+        function startWork() {
+            const nameInput = document.getElementById('student-name').value.trim();
+            const groupInput = document.getElementById('student-group').value.trim();
+
+            if (nameInput.length < 5 || groupInput.length < 2) {
+                showToast('Будь ласка, впишіть прізвище, ім’я, по батькові та навчальну групу.', 'error');
+                return;
+            }
+
+            state.studentName = nameInput;
+            state.studentGroup = groupInput;
+            state.started = true;
+
+            renderTasks();
+
+            document.getElementById('screen-intro').classList.add('hidden');
+            document.getElementById('screen-work').classList.remove('hidden');
+            document.getElementById('session-status').classList.remove('hidden');
+            document.getElementById('session-status').classList.add('flex');
+
+            state.timerInterval = setInterval(() => {
+                state.elapsedSeconds++;
+                const mins = String(Math.floor(state.elapsedSeconds / 60)).padStart(2, '0');
+                const secs = String(state.elapsedSeconds % 60).padStart(2, '0');
+                document.getElementById('timer-display').textContent = `${mins}:${secs}`;
+            }, 1000);
+
+            showToast('Режим академічної доброчесності увімкнено. Бажаємо успіху!', 'success');
+        }
+
+        // Перемикання вкладок
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`content-${tabName}`).classList.remove('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-academic-700', 'text-white', 'border-academic-800');
+                btn.classList.add('text-stone-700', 'bg-stone-100', 'hover:bg-stone-200', 'border-stone-300');
+            });
+
+            const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+            activeBtn.classList.remove('text-stone-700', 'bg-stone-100', 'hover:bg-stone-200', 'border-stone-300');
+            activeBtn.classList.add('bg-academic-700', 'text-white', 'border-academic-800');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ==========================================
+        // СИСТЕМА АНТИЧИТУ ТА КОНТРОЛЮ АКАДЕМІЧНОЇ ДОБРОЧЕСНОСТІ
+        // ==========================================
+
+        ['paste', 'copy', 'cut', 'drop'].forEach(eventType => {
+            document.addEventListener(eventType, (e) => {
+                e.preventDefault();
+                if (state.started && !state.finished) {
+                    state.pasteAttempts++;
+                    showToast('Заборонено! Копіювання та вставка тексту заблоковані. Вводьте відповідь власноруч.', 'error');
+                }
+            });
+        });
+
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            if (state.started && !state.finished) {
+                showToast('Контекстне меню вимкнено для дотримання академічної доброчесності.', 'warning');
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && ['c', 'v', 'x', 'u', 's', 'a'].includes(e.key.toLowerCase())) {
+                if (e.key.toLowerCase() === 'a' && ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+                    return;
+                }
+                e.preventDefault();
+                if (state.started && !state.finished) {
+                    showToast('Використання комбінацій клавіш буфера обміну заблоковано.', 'error');
+                }
+            }
+        });
+
+        function registerTabViolation(reasonText) {
+            if (!state.started || state.finished) return;
+            state.violations++;
+            
+            document.getElementById('header-violation-count').textContent = state.violations;
+            document.getElementById('modal-violation-count').textContent = state.violations;
+            document.getElementById('anticheat-reason').textContent = reasonText;
+
+            const badge = document.getElementById('violation-badge');
+            badge.classList.remove('bg-emerald-900/80', 'text-emerald-200', 'border-emerald-600');
+            badge.classList.add('bg-red-800', 'text-white', 'border-red-400');
+
+            const modal = document.getElementById('anticheat-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeAnticheatModal() {
+            const modal = document.getElementById('anticheat-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                registerTabViolation('Зафіксовано перехід на іншу вкладку браузера або згортання вікна під час виконання практичної роботи.');
+            }
+        });
+
+        window.addEventListener('blur', () => {
+            setTimeout(() => {
+                if (!document.hasFocus()) {
+                    registerTabViolation('Вікно практичної роботи втратило фокус (перехід до стороннього вікна або програми).');
+                }
+            }, 200);
+        });
+
+        document.getElementById('task5-input').addEventListener('input', function() {
+            const words = this.value.trim().split(/\s+/).filter(w => w.length > 0);
+            document.getElementById('task5-wordcount').textContent = `Кількість слів: ${words.length}`;
+            updateProgress();
+        });
+
+        function normalizeStr(str) {
+            return str.toLowerCase()
+                .replace(/['’ʼ`]/g, '')
+                .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()«»"]/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        // Завершення роботи та формування протоколу
+        function finishWork() {
+            state.finished = true;
+            clearInterval(state.timerInterval);
+
+            let totalScore = 0;
+            let breakdownHTML = '';
+
+            // Перевірка Завдання 1 (2 бали)
+            let t1Correct = 0;
+            let t1Details = [];
+            task1Data.forEach(item => {
+                const rawVal = document.getElementById(item.id).value;
+                const userVal = normalizeStr(rawVal);
+                const isOk = item.valid.some(v => normalizeStr(v) === userVal);
+                if (isOk) t1Correct++;
+                t1Details.push(`<li class="${isOk ? 'text-emerald-900' : 'text-red-900'}">
+                    <strong>${item.foreign}:</strong> відповідь студента — «${rawVal || 'не заповнено'}» 
+                    ${isOk ? '✓' : `(нормативний відповідник: ${item.valid[0]})`}
+                </li>`);
+            });
+            const t1Score = (t1Correct / task1Data.length) * 2;
+            totalScore += t1Score;
+            breakdownHTML += createBreakdownCard('Завдання 1. Добір українських відповідників до іноземних слів', t1Score, 2, `<ul class="text-sm space-y-1 mt-2 list-disc list-inside">${t1Details.join('')}</ul>`);
+
+            // Перевірка Завдання 2 (2 бали)
+            let t2Correct = 0;
+            let t2Details = [];
+            task2Data.forEach(item => {
+                const rawVal = document.getElementById(item.id).value;
+                const userVal = normalizeStr(rawVal);
+                const isOk = item.valid.some(v => normalizeStr(v) === userVal);
+                if (isOk) t2Correct++;
+                t2Details.push(`<li class="${isOk ? 'text-emerald-900' : 'text-red-900'}">
+                    <strong>${item.wrong}:</strong> відповідь — «${rawVal || 'не заповнено'}» 
+                    ${isOk ? '✓' : `(нормативно: ${item.valid[0]})`}
+                </li>`);
+            });
+            const t2Score = (t2Correct / task2Data.length) * 2;
+            totalScore += t2Score;
+            breakdownHTML += createBreakdownCard('Завдання 2. Усунення лексичної надмірності (плеоназмів)', t2Score, 2, `<ul class="text-sm space-y-1 mt-2 list-disc list-inside">${t2Details.join('')}</ul>`);
+
+            // Перевірка Завдання 3 (2.5 бали)
+            let t3Correct = 0;
+            let t3Details = [];
+            task3Data.forEach((item, idx) => {
+                const rawVal = document.getElementById(item.id).value;
+                const userVal = normalizeStr(rawVal);
+                const hasKeyword = item.keywords.some(kw => userVal.includes(normalizeStr(kw)));
+                const isLongEnough = userVal.length > 25;
+                const isOk = hasKeyword && isLongEnough;
+                if (isOk) t3Correct++;
+                t3Details.push(`<li class="${isOk ? 'text-emerald-900' : 'text-red-900'}">
+                    <strong>Речення ${idx + 1}:</strong> «${rawVal || 'не виконано'}» 
+                    <div class="text-stone-600 mt-0.5">Зразок редагування: <em>${item.sample}</em></div>
+                </li>`);
+            });
+            const t3Score = (t3Correct / task3Data.length) * 2.5;
+            totalScore += t3Score;
+            breakdownHTML += createBreakdownCard('Завдання 3. Контекстуальна заміна в реченнях службових листів', t3Score, 2.5, `<ul class="text-sm space-y-2 mt-2 list-disc list-inside">${t3Details.join('')}</ul>`);
+
+            // Перевірка Завдання 4 (2.5 бали)
+            let t4Correct = 0;
+            let t4Details = [];
+            task4Data.forEach(item => {
+                const selVal = document.getElementById(`${item.id}_select`).value;
+                const inpVal = normalizeStr(document.getElementById(`${item.id}_input`).value);
+                let isOk = false;
+
+                if (item.action === 'keep' && selVal === 'keep') {
+                    isOk = true;
+                } else if (item.action === 'replace' && selVal === 'replace') {
+                    isOk = item.valid.some(v => normalizeStr(v) === inpVal);
+                }
+
+                if (isOk) t4Correct++;
+                t4Details.push(`<li class="${isOk ? 'text-emerald-900' : 'text-red-900'}">
+                    <strong>${item.word}:</strong> ${isOk ? 'Визначено правильно ✓' : `Помилка (правильно: ${item.action === 'keep' ? 'залишити' : 'замінити на «' + item.valid[0] + '»'})`}
+                </li>`);
+            });
+            const t4Score = (t4Correct / task4Data.length) * 2.5;
+            totalScore += t4Score;
+            breakdownHTML += createBreakdownCard('Завдання 4. Оцінка доцільності використання терміна в документі', t4Score, 2.5, `<ul class="text-sm space-y-1 mt-2 list-disc list-inside">${t4Details.join('')}</ul>`);
+
+            // Перевірка Завдання 5 (3 бали)
+            const t5Raw = document.getElementById('task5-input').value;
+            const t5Norm = normalizeStr(t5Raw);
+            const forbiddenWords = ['саміт', 'департамент', 'моніторинг', 'кейс', 'фідбек', 'дайджест', 'мітинг', 'таймінг', 'дедлайн'];
+            let remainingForeign = forbiddenWords.filter(fw => t5Norm.includes(fw));
+            
+            let t5Score = 0;
+            let t5Status = '';
+            if (t5Norm.length < 80) {
+                t5Score = 0;
+                t5Status = 'Текст наказу не введено або введено неповністю.';
+            } else {
+                const cleanedCount = Math.max(0, 8 - remainingForeign.length);
+                t5Score = (cleanedCount / 8) * 3;
+                t5Status = remainingForeign.length === 0 
+                    ? 'Усі невиправдані іноземні слова успішно замінено! ✓' 
+                    : `У тексті залишилися невідредаговані іноземні слова (основи): ${remainingForeign.join(', ')}.`;
+            }
+            totalScore += t5Score;
+
+            breakdownHTML += createBreakdownCard('Завдання 5. Стилістичне редагування проєкту наказу керівника', t5Score, 3, `
+                <p class="text-sm text-stone-900 mt-2 font-bold">${t5Status}</p>
+                <div class="mt-2 p-3 bg-white rounded border border-stone-300 text-sm text-stone-800">
+                    <strong>Відредагований текст студента:</strong> ${t5Raw || '—'}
+                </div>
+            `);
+
+            const roundedScore = Math.round(totalScore * 10) / 10;
+
+            document.getElementById('final-score').textContent = roundedScore;
+            document.getElementById('res-name').textContent = state.studentName;
+            document.getElementById('res-group').textContent = state.studentGroup;
+            document.getElementById('res-time').textContent = document.getElementById('timer-display').textContent;
+            document.getElementById('results-breakdown').innerHTML = breakdownHTML;
+
+            const integrityBox = document.getElementById('res-integrity-box');
+            const violationsText = document.getElementById('res-violations');
+            if (state.violations > 0 || state.pasteAttempts > 0) {
+                integrityBox.classList.remove('bg-emerald-50', 'border-emerald-300');
+                integrityBox.classList.add('bg-red-50', 'border-red-300');
+                violationsText.classList.remove('text-emerald-950');
+                violationsText.classList.add('text-red-900');
+                violationsText.textContent = `Виходів із вкладки: ${state.violations} | Спроб вставки: ${state.pasteAttempts}`;
+            }
+
+            document.getElementById('screen-work').classList.add('hidden');
+            document.getElementById('session-status').classList.add('hidden');
+            document.getElementById('session-status').classList.remove('flex');
+            document.getElementById('screen-results').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function createBreakdownCard(title, score, maxScore, contentHTML) {
+            const formattedScore = Math.round(score * 10) / 10;
+            return `
+                <div class="bg-academic-50 border border-stone-300 rounded-xl p-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <h4 class="font-bold text-academic-900 text-base">${title}</h4>
+                        <span class="px-3 py-1 bg-white border border-stone-300 rounded text-sm font-bold text-academic-800">
+                            ${formattedScore} / ${maxScore} балів
+                        </span>
+                    </div>
+                    ${contentHTML}
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
